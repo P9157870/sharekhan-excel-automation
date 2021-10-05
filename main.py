@@ -71,16 +71,54 @@ def fill_data_for_single_buy_single_sell(stock, individual_stock_sell_df):
                         sell_cost
                     ]
 
+
+
+#* function for one buy and multiple sell
+def fill_data_for_single_buy_multiple_sell(stock, individual_stock_sell_df, individual_stock_buy_df):
+    global resultant_df
+    stock_first_sell_quantity = individual_stock_sell_df.iloc[0]["Quantity"]
+    resultant_df.loc[resultant_df["Stocks"] == stock,"Buy Quantity"] = stock_first_sell_quantity
+    
+    index = 1
+    stock_total_sell_quantity = stock_first_sell_quantity
+    
+    while index < len(individual_stock_sell_df) and stock_total_sell_quantity <= individual_stock_buy_df.iloc[0]["Buy Quantity"] :
+        resultant_df = resultant_df.append(
+            [
+                {
+                    'Entry Date'  : individual_stock_buy_df.iloc[0]["Entry Date"],
+                    'Stocks'      : individual_stock_sell_df.iloc[index]["Scrip Symbol"],
+                    'Buy Quantity': individual_stock_sell_df.iloc[index]["Quantity"],
+                    'Entry Price' : individual_stock_buy_df.iloc[0]["Entry Price"],
+                    'Exit Date'   : individual_stock_sell_df.iloc[index]["Trade Date"],
+                    'Sell Quantity': individual_stock_sell_df.iloc[index]["Quantity"],
+                    'Exit Price'  : individual_stock_sell_df.iloc[index]["Rate"],
+                },
+            ],
+            ignore_index = True
+        )
+        
+        stock_total_sell_quantity += individual_stock_sell_df.iloc[index]["Quantity"]
+        index += 1
+
+
+
 #* code till single buy and single sell
 
 total_stock_types = list(set(resultant_df["Stocks"].to_list()))
 
 for stock in total_stock_types:
+    
     individual_stock_buy_df = resultant_df[resultant_df["Stocks"] == stock]
+    
     if len(individual_stock_buy_df) == 1:
         individual_stock_sell_df = sell_df[sell_df["Scrip Symbol"] == stock]
+        
+        #* one buy and one sell
         if len(individual_stock_sell_df) == 1:
             if individual_stock_buy_df.iloc[0]["Buy Quantity"] == individual_stock_sell_df.iloc[0]["Quantity"]:
                 fill_data_for_single_buy_single_sell(stock,individual_stock_sell_df)
-                
-                
+        
+        #* one buy and multiple sell
+        elif len(individual_stock_sell_df) > 1:
+            fill_data_for_single_buy_multiple_sell(stock, individual_stock_sell_df, individual_stock_buy_df)
